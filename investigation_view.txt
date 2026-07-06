@@ -1,0 +1,376 @@
+function InvestigationView({ investigationTypes, activeType, setActiveType, apiKey }) {
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [report, setReport] = useState(null);
+  const [investigationId, setInvestigationId] = useState(null);
+  const [error, setError] = useState(null);
+  const [inputShake, setInputShake] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0.0);
+  const [backendHasKey, setBackendHasKey] = useState(null); // null = checking
+
+  const timerRef = useRef(null);
+  const reportRef = useRef(null);
+  const addToast = useToast();
+
+  // Auto-detect if backend has API key configured
+  useEffect(() => {
+    fetch('/api/config')
+      .then(r => r.json())
+      .then(data => setBackendHasKey(data.has_api_key))
+      .catch(() => setBackendHasKey(false));
+  }, []);
+
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault();
+    if (!input.trim()) {
+      setInputShake(true);
+      setTimeout(() => setInputShake(false), 500);
+      return;
+    }
+
+    const effectiveKey = apiKey || window.localStorage.getItem('openai_api_key') || '';
+    // Backend will fall back to its .env key when empty string is sent
+    // but we warn the user if we can confirm no key exists anywhere
+    if (!effectiveKey && backendHasKey === false) {
+      setError('No OpenAI API key found. Please add your API key in Settings.');
+      addToast('API key required. Go to Settings to configure.', 'error');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setReport(null);
+    setElapsedTime(0.0);
+    setInvestigationId(null);
+
+    // Start elapsed time counter
+    let elapsed = 0.0;
+    timerRef.current = setInterval(() => {
+      elapsed += 0.1;
+      setElapsedTime(parseFloat(elapsed.toFixed(1)));
+    }, 100);
+
+    try {
+      const res = await fetch('/api/investigate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          investigation_type: activeType,
+          user_input: input,
+          api_key: effectiveKey
+        })
+      });
+
+      const startData = await res.json();
+      if (!res.ok) throw new Error(startData.detail || 'Investigation pipeline failed');
+
+      const jobId = startData.job_id;
+
+      // Poll the job status endpoint
+      const pollJob = async () => {
+        try {
+          const pollRes = await fetch(`/api/jobs/${jobId}`);
+          const pollData = await pollRes.json();
+          
+          if (!pollRes.ok) {
+            throw new Error(pollData.detail || 'Job polling failed');
+          }
+          
+          if (pollData.status === 'running') {
+            // Keep polling every 2 seconds
+            setTimeout(pollJob, 2000);
+          } else { // done
+            clearInterval(timerRef.current);
+            setInvestigationId(pollData.id);
+            setReport(pollData.report);
+            setLoading(false);
+            addToast('Investigation completed successfully!', 'success');
+            
+            // Auto-scroll to report
+            setTimeout(() => {
+              if (reportRef.current) {
+                reportRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }, 200);
+          }
+        } catch (pollErr) {
+          clearInterval(timerRef.current);
+          setError(pollErr.message);
+          setLoading(false);
+          addToast(`Investigation failed: ${pollErr.message}`, 'error');
+        }
+      };
+
+      // Trigger the first poll after 2 seconds
+      setTimeout(pollJob, 2000);
+
+    } catch (err) {
+      clearInterval(timerRef.current);
+      setError(err.message);
+      setLoading(false);
+      addToast(`Investigation failed: ${err.message}`, 'error');
+    }
+  }, [input, activeType, apiKey, backendHasKey, addToast]);
+
+  const loadExample = useCallback((text) => setInput(text), []);
+
+  useEffect(() => {
+    setInput('');
+    setReport(null);
+    setInvestigationId(null);
+    setError(null);
+    setElapsedTime(0.0);
+    if (timerRef.current) clearInterval(timerRef.current);
+  }, [activeType]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  const config = useMemo(() => investigationTypes.find(t => t.id === activeType) || investigationTypes[0], [activeType, investigationTypes]);
+  const apiKeyMissing = backendHasKey === false && !apiKey && !window.localStorage.getItem('openai_api_key');
+
+  return (
+    <div className="space-y-6 font-sans">
+      
+      {/* Header */}
+      <div className="border-b border-[#1e2430] pb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-white font-mono">
+          Incident Investigation Console
+        </h1>
+        <p className="text-slate-400 text-xs font-mono mt-1">Submit a target URL, IP, log data, or threat indicator — the AI crew will analyze and return a full security report.</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        
+        {/* Channel selector */}
+        <div className="space-y-2" role="radiogroup" aria-label="Investigation type">
+          <span className="text-[10px] font-bold text-slate-500 uppercase font-mono block mb-2">Select Investigation Channel</span>
+          {investigationTypes.map(type => {
+            const isActive = type.id === activeType;
+            return (
+              <div
+                key={type.id}
+                onClick={() => { if (!loading) setActiveType(type.id); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !loading) setActiveType(type.id); }}
+                role="radio"
+                aria-checked={isActive}
+                tabIndex="0"
+                className={`p-3.5 rounded-sm border-slate-800 border transition-all cursor-pointer font-mono text-left btn-press ${
+                  isActive 
+                    ? 'bg-[#0d1117] border-[#05c280] text-white  shadow-emerald-500/5 animate-glow' 
+                    : `bg-[#0d1117]/30 border-[#30363d] text-slate-400 hover:text-slate-200 hover:border-slate-600 hover:translate-x-0.5 ${loading ? 'opacity-55 cursor-not-allowed' : ''}`
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon name={type.icon} className={`w-4 h-4 ${isActive ? 'text-[#05c280]' : 'text-slate-500'}`} />
+                  <span className="text-xs font-mono font-bold block">{type.title}</span>
+                </div>
+                {isActive && <p className="text-[10px] text-slate-400 mt-2 leading-relaxed font-sans">{type.desc}</p>}
+              </div>
+            );
+          })}
+
+          {/* API Key status indicator */}
+          <div className={`mt-4 p-3 rounded-sm border-slate-800 border text-[10px] font-mono ${
+            backendHasKey === null ? 'border-[#30363d] text-slate-500 bg-[#0b0e14]' :
+            backendHasKey || apiKey ? 'border-emerald-500/20 text-emerald-400 bg-emerald-950/10' :
+            'border-amber-500/20 text-amber-400 bg-amber-950/10'
+          }`}>
+            <div className="flex items-center gap-2">
+              <span className={`w-1.5 h-1.5 rounded-sm ${
+                backendHasKey === null ? 'bg-slate-500' :
+                backendHasKey || apiKey ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+              }`} />
+              {backendHasKey === null ? 'Checking API...' :
+               backendHasKey ? 'AI Engine: Ready' :
+               apiKey ? 'API Key: Custom' : 'No API Key Set'}
+            </div>
+            {!backendHasKey && !apiKey && backendHasKey !== null && (
+              <p className="mt-1.5 text-[9px] text-amber-400/70">Add your key in Settings to enable AI analysis.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Input & Results */}
+        <div className="lg:col-span-3 space-y-6">
+          
+          {/* Input Form */}
+          <div className="p-6 rounded-sm border-slate-800 bg-[#0d1117] border border-[#30363d]">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="investigation-input" className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">
+                  Input Parameters / Target
+                </label>
+                {activeType === 'logs' ? (
+                  <textarea 
+                    id="investigation-input"
+                    className={`w-full bg-[#0b0e14] border border-[#30363d] hover:border-slate-600 focus:border-[#05c280] rounded-sm border-slate-800 p-3.5 text-xs font-mono text-slate-200 outline-none transition-colors min-h-[140px] font-mono leading-relaxed ${inputShake ? 'animate-shake border-red-500' : ''}`}
+                    placeholder={config.placeholder}
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                ) : (
+                  <input 
+                    id="investigation-input"
+                    type="text"
+                    className={`w-full bg-[#0b0e14] border border-[#30363d] hover:border-slate-600 focus:border-[#05c280] rounded-sm border-slate-800 p-3.5 text-xs font-mono text-slate-200 outline-none transition-colors font-mono ${inputShake ? 'animate-shake border-red-500' : ''}`}
+                    placeholder={config.placeholder}
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                )}
+              </div>
+
+              {/* Submit row */}
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-mono pt-2">
+                <div className="flex gap-2 text-[10px] text-slate-500">
+                  <span>Quick Test:</span>
+                  {activeType === 'website' && (
+                    <button type="button" onClick={() => loadExample('https://google-gruyere.appspot.com')} className="text-[#05c280] hover:underline">Gruyere scan</button>
+                  )}
+                  {activeType === 'logs' && (
+                    <button type="button" onClick={() => loadExample('Jul 01 12:45:22 fw01 SEC_DENY src=192.168.1.150 dst=10.0.0.5 proto=TCP port=445 action=block')} className="text-[#05c280] hover:underline">FW Auth block</button>
+                  )}
+                  {activeType === 'threat' && (
+                    <button type="button" onClick={() => loadExample('185.190.140.9')} className="text-[#05c280] hover:underline">IP check</button>
+                  )}
+                  {activeType === 'question' && (
+                    <button type="button" onClick={() => loadExample('What are typical compliance controls for HIPAA security?')} className="text-[#05c280] hover:underline">HIPAA Help</button>
+                  )}
+                </div>
+
+                <button 
+                  type="submit"
+                  disabled={loading || !input.trim() || apiKeyMissing}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-sm border-slate-800 font-bold font-mono text-xs font-mono uppercase tracking-wider text-[#0b0e14] bg-[#05c280] hover:bg-[#04a36b] hover: hover:shadow-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 btn-press"
+                >
+                  {loading ? (
+                    <>
+                      <Spinner size="sm" className="text-[#0b0e14]" /> Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="zap" className="w-3.5 h-3.5" /> Launch Investigation
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* ── LOADING STATE ── */}
+          {loading && (
+            <div className="p-8 rounded-sm border-slate-800 bg-[#0d1117] border border-emerald-500/20 ">
+              <div className="flex flex-col items-center gap-5">
+                {/* Animated shield */}
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-sm border-2 border-[#05c280]/20 flex items-center justify-center animate-glow">
+                    <div className="w-12 h-12 rounded-sm border-t-2 border-[#05c280] animate-spin" />
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Icon name="shield" className="w-6 h-6 text-[#05c280]" />
+                  </div>
+                </div>
+
+                <div className="text-center space-y-1">
+                  <h3 className="text-sm font-mono font-bold text-white font-mono">AI Crew Investigating...</h3>
+                  <p className="text-xs font-mono text-slate-400">8 specialist agents are analyzing your target</p>
+                  <p className="text-[10px] font-mono text-[#05c280] mt-2">
+                    Elapsed: <span className="font-bold">{elapsedTime}s</span>
+                  </p>
+                </div>
+
+                {/* Agent pills — compact progress row */}
+                <div className="flex flex-wrap justify-center gap-2 mt-2">
+                  {SOC_AGENTS.map((agent, i) => (
+                    <div key={agent.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-[#0b0e14] border border-[#30363d] text-[9px] font-mono text-slate-400">
+                      <span className="w-1.5 h-1.5 rounded-sm bg-[#05c280] animate-pulse" style={{ animationDelay: `${i * 200}ms` }} />
+                      {agent.name.split(' ')[0]}
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-[10px] text-slate-600 font-mono">This may take 30–120 seconds depending on the investigation complexity.</p>
+              </div>
+            </div>
+          )}
+
+          {/* ── ERROR STATE ── */}
+          {error && !loading && (
+            <div className="p-5 bg-red-950/20 border border-red-900/30 rounded-sm border-slate-800 " role="alert">
+              <div className="flex items-start gap-3">
+                <div className="p-1.5 rounded-sm border-slate-800 bg-red-500/10 flex-shrink-0">
+                  <Icon name="alertTriangle" className="w-4 h-4 text-red-400" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-mono font-bold text-red-300 font-mono mb-1">Investigation Failed</h4>
+                  <p className="text-xs font-mono text-red-400/80 leading-relaxed">{error}</p>
+                  {error.toLowerCase().includes('api key') && (
+                    <p className="text-[10px] text-slate-500 mt-2">
+                      → Go to <span className="text-[#05c280]">Settings</span> (top-right) to enter your OpenAI API key.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── INVESTIGATION REPORT (Main Output) ── */}
+          {report && !loading && (
+            <div ref={reportRef} className="rounded-sm border-slate-800 bg-[#0d1117] border border-emerald-500/20  overflow-hidden">
+              
+              {/* Report Header */}
+              <div className="px-6 py-4 border-b border-[#30363d] bg-gradient-to-r from-emerald-950/20 to-transparent">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-sm border-slate-800 bg-emerald-500/10 border border-emerald-500/20">
+                      <Icon name="checkCircle" className="w-4 h-4 text-[#05c280]" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-mono font-bold text-white font-mono">Investigation Report</h2>
+                      <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                        {config.title} · Completed in {elapsedTime}s · {investigationId ? `Case #${investigationId}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard?.writeText(report);
+                        addToast('Report copied to clipboard', 'success');
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0b0e14] border border-[#30363d] hover:border-slate-500 text-slate-300 hover:text-white rounded-sm border-slate-800 text-[10px] font-mono font-bold transition-all btn-press"
+                    >
+                      <Icon name="copy" className="w-3 h-3" /> Copy
+                    </button>
+                    {investigationId && (
+                      <button
+                        onClick={() => window.open(`/api/reports/${investigationId}/pdf`, '_blank')}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0b0e14] border border-[#30363d] hover:border-[#05c280] text-slate-300 hover:text-[#05c280] rounded-sm border-slate-800 text-[10px] font-mono font-bold transition-all btn-press"
+                      >
+                        <Icon name="download" className="w-3 h-3" /> PDF
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Report Body with tabs */}
+              <div className="p-6">
+                <ReportViewer initialReport={report} invId={investigationId} />
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CyberFusion AI — Multi-Agent SOC Threat Intelligence & Incident Response Platform powered by CrewAI and GPT-4o-mini.">
+    <title>CyberFusion AI — SOC Threat Analyst</title>
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              thm: {
+                bg: '#000000',
+                panel: '#0d1117',
+                panelLight: '#161b22',
+                border: '#30363d',
+                primary: '#05c280',
+                primaryHover: '#04a36b',
+                secondary: '#2e3748',
+                textMuted: '#8b949e'
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style type="text/tailwindcss">
+      body {
+        background-color: #000000;
+        color: #c9d1d9;
+        font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
+        overflow-x: hidden;
+      }
+      
+      /* ─── Scrollbars ─── */
+      .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: #0b0e14; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #222938; border-radius: 4px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #2e3748; }
+      body::-webkit-scrollbar { width: 8px; }
+      body::-webkit-scrollbar-track { background: #0b0e14; }
+      body::-webkit-scrollbar-thumb { background: #1e2430; border-radius: 4px; }
+      body::-webkit-scrollbar-thumb:hover { background: #2e3748; }
+
+      /* ─── Selection ─── */
+      ::selection { background: rgba(5, 194, 128, 0.2); color: #fff; }
+
+      /* ─── Skip to Main ─── */
+      .skip-to-main {
+        position: absolute; top: -100%; left: 50%; transform: translateX(-50%);
+        background: #05c280; color: #0b0e14; padding: 8px 20px; border-radius: 0 0 8px 8px;
+        font-weight: 700; font-size: 12px; z-index: 9999; transition: top 0.2s;
+      }
+      .skip-to-main:focus { top: 0; }
+
+      /* ─── Focus Ring (Accessibility) ─── */
+      *:focus-visible {
+        outline: 2px solid rgba(5, 194, 128, 0.6);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      /* ═══════════════════════════════════════════
+         ANIMATION KEYFRAMES
+         ═══════════════════════════════════════════ */
+
+      /* Fade In (enhanced) */
+      .animate-fade-in {
+        animation: fadeIn 0.45s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        opacity: 0;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      /* Slide Up — staggered card entrance */
+      .animate-slide-up {
+        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+      }
+      @keyframes slideUp {
+        from { opacity: 0; transform: translateY(24px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      /* Slide Down — toast/dropdown entrance */
+      .animate-slide-down {
+        animation: slideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-16px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      /* Slide In Right — detail panel drawer */
+      .animate-slide-in-right {
+        animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+      }
+      @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(30px); }
+        to   { opacity: 1; transform: translateX(0); }
+      }
+
+      /* Scale In — success/modal pop */
+      .animate-scale-in {
+        animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        opacity: 0;
+      }
+      @keyframes scaleIn {
+        from { opacity: 0; transform: scale(0.85); }
+        to   { opacity: 1; transform: scale(1); }
+      }
+
+      /* Glow Pulse — active elements */
+      .animate-glow {
+        animation: glowPulse 2s ease-in-out infinite;
+      }
+      @keyframes glowPulse {
+        0%, 100% { box-shadow: 0 0 4px rgba(5, 194, 128, 0.15); }
+        50%      { box-shadow: 0 0 20px rgba(5, 194, 128, 0.3); }
+      }
+
+      /* Checkmark Stroke Draw */
+      .animate-check-draw {
+        animation: checkDraw 0.6s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+      }
+      @keyframes checkDraw {
+        from { stroke-dashoffset: 24; }
+        to   { stroke-dashoffset: 0; }
+      }
+
+      /* Skeleton Shimmer */
+      .skeleton-shimmer {
+        background: linear-gradient(90deg, #181c25 25%, #222938 37%, #181c25 63%);
+        background-size: 400% 100%;
+        animation: shimmer 1.4s ease infinite;
+        border-radius: 6px;
+      }
+      @keyframes shimmer {
+        0%   { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+
+      /* Progress Stripe */
+      .animate-progress-stripe {
+        background-image: linear-gradient(
+          45deg,
+          rgba(255,255,255,0.08) 25%, transparent 25%,
+          transparent 50%, rgba(255,255,255,0.08) 50%,
+          rgba(255,255,255,0.08) 75%, transparent 75%
+        );
+        background-size: 16px 16px;
+        animation: progressStripe 0.6s linear infinite;
+      }
+      @keyframes progressStripe {
+        from { background-position: 16px 0; }
+        to   { background-position: 0 0; }
+      }
+
+      /* Shake — error feedback */
+      .animate-shake {
+        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+      }
+      @keyframes shake {
+        10%, 90% { transform: translateX(-1px); }
+        20%, 80% { transform: translateX(2px); }
+        30%, 50%, 70% { transform: translateX(-3px); }
+        40%, 60% { transform: translateX(3px); }
+      }
+
+      /* Toast Exit */
+      .animate-toast-exit {
+        animation: toastExit 0.3s ease forwards;
+      }
+      @keyframes toastExit {
+        to { opacity: 0; transform: translateY(-8px) scale(0.95); }
+      }
+
+      /* Toast Progress Bar */
+      .toast-progress {
+        animation: toastProgress 4s linear forwards;
+      }
+      @keyframes toastProgress {
+        from { width: 100%; }
+        to   { width: 0%; }
+      }
+
+      /* Stagger Delay Utilities */
+      .delay-75  { animation-delay: 75ms; }
+      .delay-100 { animation-delay: 100ms; }
+      .delay-150 { animation-delay: 150ms; }
+      .delay-200 { animation-delay: 200ms; }
+      .delay-250 { animation-delay: 250ms; }
+      .delay-300 { animation-delay: 300ms; }
+      .delay-400 { animation-delay: 400ms; }
+      .delay-500 { animation-delay: 500ms; }
+
+      /* ─── Card Hover Lift ─── */
+      .card-hover {
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                    box-shadow 0.25s ease,
+                    border-color 0.25s ease;
+      }
+      .card-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(5, 194, 128, 0.1);
+      }
+
+      /* ─── Button Press Feedback ─── */
+      .btn-press { transition: transform 0.1s ease, box-shadow 0.2s ease; }
+      .btn-press:active { transform: scale(0.97); }
+
+      /* ─── Reduced Motion ─── */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+        .skeleton-shimmer { animation: none; }
+        .animate-pulse { animation: none; }
+      }
+
+      /* ─── Responsive Font Floor ─── */
+      @media (max-width: 640px) {
+        .font-mono { font-size: max(0.625rem, 10px); }
+      }
+
+      /* ─── Mobile Nav Overlay ─── */
+      .mobile-nav-overlay {
+        position: fixed; inset: 0; z-index: 45;
+        background: rgba(11, 14, 20, 0.8);
+        backdrop-filter: blur(4px);
+        animation: fadeIn 0.2s ease forwards;
+      }
+      .mobile-nav-drawer {
+        position: fixed; top: 0; right: 0; bottom: 0; width: 280px; z-index: 50;
+        background: #181c25; border-left: 1px solid #2a3245;
+        animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        overflow-y: auto;
+      }
+    </style>
+
+    <!-- React & ReactDOM via CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for in-browser JSX transpilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons via CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Marked for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js"></script>
+</head>
+<body class="antialiased">
+    <!-- Skip to main content (a11y) -->
+    <a href="#main-content" class="skip-to-main">Skip to main content</a>
+    <div id="root"></div>
+
+    <!-- Our React Application -->
+    <script type="text/babel" src="/static/app.jsx?v=1.0.2"></script>
+</body>
+</html>

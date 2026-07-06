@@ -1601,7 +1601,7 @@ function HistoryView({ investigationTypes }) {
   }, [addToast]);
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+    <div className="space-y-6 font-sans">
       
       {/* Header */}
       <div className="border-b border-[#1e2430] pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">

@@ -2002,20 +2002,20 @@ function ArchitectureView() {
           {/* Specialists */}
           <g transform="translate(550, 40)">
             <rect width="140" height="60" rx="6" fill="#181c25" stroke="#2a3245" />
-            <text x="70" y="26" fill="#fff" fontSize="10" fontWeight="bold" textAnchor="middle">Recon &amp; Auditor</text>
-            <text x="70" y="42" fill="#5c6a80" fontSize="8" textAnchor="middle">BeautifulSoup Web Scrape</text>
+            <text x="70" y="26" fill="#fff" fontSize="10" fontWeight="bold" textAnchor="middle">Recon &amp; Threat Agents</text>
+            <text x="70" y="42" fill="#5c6a80" fontSize="8" textAnchor="middle">Shodan &amp; VirusTotal MCPs</text>
           </g>
 
           <g transform="translate(550, 140)">
             <rect width="140" height="60" rx="6" fill="#181c25" stroke="#2a3245" />
-            <text x="70" y="26" fill="#fff" fontSize="10" fontWeight="bold" textAnchor="middle">Intel &amp; Risk Assessment</text>
-            <text x="70" y="42" fill="#5c6a80" fontSize="8" textAnchor="middle">CVSS score mapping</text>
+            <text x="70" y="26" fill="#fff" fontSize="10" fontWeight="bold" textAnchor="middle">Risk, Log, Compliance</text>
+            <text x="70" y="42" fill="#5c6a80" fontSize="8" textAnchor="middle">CVSS &amp; Framework Mapping</text>
           </g>
 
           <g transform="translate(550, 240)">
             <rect width="140" height="60" rx="6" fill="#181c25" stroke="#2a3245" />
-            <text x="70" y="26" fill="#fff" fontSize="10" fontWeight="bold" textAnchor="middle">Compliance &amp; Memory</text>
-            <text x="70" y="42" fill="#5c6a80" fontSize="8" textAnchor="middle">SQLite Database query</text>
+            <text x="70" y="26" fill="#fff" fontSize="10" fontWeight="bold" textAnchor="middle">Report &amp; Memory</text>
+            <text x="70" y="42" fill="#5c6a80" fontSize="8" textAnchor="middle">SQLite &amp; Markdown Gen</text>
           </g>
 
         </svg>
@@ -2039,7 +2039,7 @@ function AboutView() {
         <h1 className="text-2xl font-bold tracking-tight text-white">
           About CyberFusion AI
         </h1>
-        <p className="text-slate-400 text-xs font-mono mt-1">Core details on the Hackathon SOC Prototype project parameters.</p>
+        <p className="text-slate-400 text-xs font-mono mt-1">Core details on the CyberFusion AI Capstone Project architecture.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

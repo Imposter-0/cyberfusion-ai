@@ -22,15 +22,31 @@ CyberFusion AI automates the threat triage and intelligence-gathering process us
 
 You provide a single indicator of compromise (an IP, a firewall log, a URL). Our CrewAI orchestration pipeline dynamically assigns tasks to specialist agents (Recon, Threat, Log, Risk, Compliance, Report, Memory). These agents autonomously query external threat intelligence feeds, calculate CVSS risk scores, map compliance controls, check local SQLite history for recurring attacks, and compile a board-ready Markdown/PDF report—all in seconds.
 
-## 🏗️ Architecture
+---
 
-CyberFusion AI utilizes a highly secure, modular architecture:
+## 🏗️ Categorized Technology Stack
 
-- **Frontend**: React + Tailwind CSS (Statically served for maximum deployability). Provides a real-time HUD of the agent thought process.
-- **Backend API**: FastAPI (Python). Enforces strict rate-limiting (`slowapi`) and prompt-injection defense.
-- **Orchestration**: CrewAI + Langchain. Manages the multi-agent conversational flow.
-- **Tool Integration (MCP)**: Implements the **Model Context Protocol (MCP)** to securely spin up Shodan and VirusTotal servers as child processes, granting agents safe access to external APIs.
-- **Persistence**: SQLite vector memory for instant historical threat recall.
+CyberFusion AI utilizes a highly secure, modular architecture separated into distinct layers:
+
+### 🎨 Frontend (User Interface)
+- **Framework**: React 19 + Vite (via Babel standalone CDN execution for ultimate portability)
+- **Styling**: Tailwind CSS with custom glassmorphism and keyframe animations
+- **Icons**: Lucide React
+- **Rendering**: Real-time agent streaming HUD, dynamic Markdown rendering, PDF generation
+
+### ⚙️ Backend (API Gateway & Orchestration)
+- **API Server**: FastAPI (Python) running on Uvicorn
+- **Orchestration**: CrewAI + Langchain (Managing the 8-agent conversational flow)
+- **Security**: Strict rate-limiting (`slowapi`), prompt-injection defense, SSRF protection
+
+### 🔌 Data & Verification Layer (Memory & Tools)
+- **Persistence**: SQLite (Local Vector-like memory for historical threat recall)
+- **Integrations**: **Model Context Protocol (MCP)** for secure tool execution
+- **Sandboxed APIs**: Shodan MCP Server & VirusTotal MCP Server
+
+---
+
+## 🗺️ Architecture Flowchart
 
 ```mermaid
 graph TD
@@ -74,34 +90,14 @@ graph TD
     API -- "JSON Response" --> UI
 ```
 
-## 📸 Interface Preview
+---
 
-*(Insert your screenshots of the UI, Agent Pipeline, and Final Report here!)*
-- `[Screenshot 1: The Dashboard / Executive Summary]`
-- `[Screenshot 2: The Visual Agent Pipeline animating]`
+## 🛠️ Getting Started
 
-## 🛠️ Instructions for Setup
+For a clean and rapid setup, we have separated our documentation:
 
-The platform is designed for rapid deployability. Ensure you have **Python 3.10+** installed.
-
-```bash
-# 1. Clone the repo
-git clone https://github.com/your-org/cyberfusion-ai.git
-cd cyberfusion-ai
-
-# 2. Create and activate a virtual environment
-python -m venv venv
-# On Windows: venv\Scripts\activate
-# On Mac/Linux: source venv/bin/activate
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Start the server
-python api/main.py
-```
-Open **[http://localhost:8000](http://localhost:8000)** in your browser. 
-*(Note: You can provide your OpenAI API key directly in the UI Settings panel, or via a `.env` file).*
+- 🚀 **[STARTUP.md](STARTUP.md)**: 1-Click quick start guide if your environment is already configured.
+- ⚙️ **[README_SETUP.md](README_SETUP.md)**: Comprehensive, step-by-step developer environment setup (Python, venv, `.env` config).
 
 ---
 

@@ -1259,61 +1259,6 @@ function DashboardView({ systemMetrics, recentActivities, fetchStatus, fetchRece
 // VIEW: INVESTIGATION (LIVE AI AGENT EXPERIENCE)
 // ═══════════════════════════════════════════
 
-
-function TerminalLogViewer({ loading, error, investigationId }) {
-  const [logs, setLogs] = useState([]);
-  
-  useEffect(() => {
-    if (!loading) return;
-    
-    // Simulate terminal logs based on active agent
-    setLogs(["[SYSTEM] Connection established.", "[SYSTEM] Initializing triage..."]);
-    
-    let step = 0;
-    const interval = setInterval(() => {
-      step++;
-      const newLog = `[${new Date().toISOString().split('T')[1].slice(0,8)}] [AGENT_SPAWN] Initializing specialist node ${step}...`;
-      setLogs(prev => [...prev, newLog]);
-      if (step > 5) clearInterval(interval);
-    }, 1200);
-    
-    return () => clearInterval(interval);
-  }, [loading]);
-
-  return (
-    <div className="flex flex-col h-full bg-[#050505] border border-[#30363d] rounded-sm overflow-hidden font-mono text-xs">
-      <div className="bg-[#161b22] border-b border-[#30363d] px-3 py-1.5 flex justify-between items-center text-[#8b949e]">
-        <span>soc_terminal_root@cyberfusion:~$</span>
-        <div className="flex gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
-          <div className="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
-          <div className="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
-        </div>
-      </div>
-      <div className="p-3 overflow-y-auto custom-scrollbar flex-1 space-y-1.5 min-h-[300px]">
-        {logs.map((log, i) => (
-          <div key={i} className="flex gap-3">
-            <span className="text-[#8b949e] select-none">{String(i+1).padStart(3, '0')}</span>
-            <span className="text-emerald-400">{log}</span>
-          </div>
-        ))}
-        {loading && (
-          <div className="flex gap-3 animate-pulse">
-            <span className="text-[#8b949e] select-none">...</span>
-            <span className="text-[#05c280]">_</span>
-          </div>
-        )}
-        {error && (
-          <div className="flex gap-3">
-            <span className="text-[#8b949e] select-none">ERR</span>
-            <span className="text-red-400">{error}</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function TerminalLogViewer({ loading, error, investigationId }) {
   const [logs, setLogs] = useState([]);
   

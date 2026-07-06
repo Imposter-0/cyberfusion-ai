@@ -1,4 +1,4 @@
-# CyberFusion AI: Hackathon Writeup
+# CyberFusion AI: Project Overview
 
 ## 1. The Problem
 In modern cybersecurity, Security Operations Centers (SOC) are the frontline defense against cyber threats. However, SOC analysts are currently facing unprecedented levels of burnout due to "alert fatigue." When a suspicious event occurs (e.g., a firewall block, a malware signature detection), the analyst must manually pivot between a dozen disconnected tools—querying IP addresses in Shodan, checking file hashes in VirusTotal, calculating CVSS impact scores, and cross-referencing compliance mandates (like SOC 2 or HIPAA). This manual, highly repetitive context-switching takes hours per incident, resulting in delayed response times that give attackers the window they need to breach a network.

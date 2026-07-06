@@ -101,10 +101,10 @@ For a clean and rapid setup, we have separated our documentation:
 
 ---
 
-## 📚 Hackathon Deliverables
+## 📚 Documentation & Resources
 
-Please explore the `docs/` folder for our comprehensive Hackathon submissions:
-- 📝 [Official Hackathon Writeup](docs/hackathon_writeup.md)
-- 🎬 [5-Minute Demo Video Script](docs/demo_video_outline.md)
+Please explore the `docs/` folder for comprehensive documentation on the platform's architecture and capabilities:
+- 📝 [Project Overview](docs/project_overview.md)
 - 🤖 [Agent Specialization Map](docs/agents.md)
 - 🔒 [Developer & Security Guide](docs/developer_guide.md)
+- 📖 [User Guide](docs/user_guide.md)
